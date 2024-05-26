@@ -1,14 +1,16 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
-async function testBcrypt() {
-    const plainTextPassword = 'passwords';
-    const hashedPassword = await bcrypt.hash(plainTextPassword, 8);
+async function testHashing() {
+    const plainPassword = 'oldpassword';
 
-    console.log('Plain text password:', plainTextPassword);
-    console.log('Hashed password:', hashedPassword);
+    // Hash the password with 12 salt rounds
+    const salt = await bcrypt.genSalt(12);
+    const hashedPasswordJS = await bcrypt.hash(plainPassword, salt);
+    console.log('Hashed Password (JS):', hashedPasswordJS);
 
-    const isMatch = await bcrypt.compare(plainTextPassword, hashedPassword);
-    console.log('Password match:', isMatch);
+    // Verify the password
+    const isMatch = await bcrypt.compare(plainPassword, hashedPasswordJS);
+    console.log('Password match (JS):', isMatch);
 }
 
-testBcrypt();
+testHashing();

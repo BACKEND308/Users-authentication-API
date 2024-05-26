@@ -1,6 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken'); // For JWT authentication
 const nodemailer = require('nodemailer'); // For sending emails
 const crypto = require('crypto'); // For generating tokens
@@ -39,6 +39,20 @@ router.get('/check-type/:email', async (req, res) => {
     }
 });
 
+// Password hashing function using a salt of 10 rounds
+async function hashPassword(password) {
+    const salt = await bcrypt.genSalt(12); // Generates a salt with 12 rounds
+    const hashedPassword = await bcrypt.hash(password, salt); // Hashes the password with the salt
+    return hashedPassword;
+}
+
+// Password comparison function
+async function checkPassword(plainPassword, hashedPassword) {
+    // bcrypt.compare handles the encoding internally
+    const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
+    return isMatch;
+}
+
 //POST request to register a new user
 router.post('/register', async (req, res) => {
     const { type='passenger', email, password } = req.body;
@@ -48,16 +62,20 @@ router.post('/register', async (req, res) => {
     try {
         let user = await User.findOne({ email });
         if (user) {
+            console.log('Hashed password from database: "', user.password, '"');
             return res.status(400).json({ message: 'User already exists' });
         }
-        const hashedPassword = await bcrypt.hash(password, 8);
+        // const salt = await bcrypt.genSalt(12); // Generates a salt with 12 rounds
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds); // Hashes the password with the salt
         user = new User({
             type,
             email,
             password : hashedPassword
         });
-        user.password = await bcrypt.hash(password, 8);
+        // console.log('User object before save:', user);
         await user.save();
+        // console.log('User registered successfully:', user);
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
         console.log(error);
@@ -71,24 +89,22 @@ router.post('/login', async (req, res) => {
     if(!email || !password) {
         return res.status(400).json({ message: 'Please provide an email and password' });
     }
-    console.log('Email:', email);
-    console.log('Password:', password);
 
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ message: 'Invalid email or password1' });
         }
-        console.log('User found:', user); // This will show the user object if found
+        // console.log('User found:', user); // This will show the user object if found
 
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         console.log('Password match:', isPasswordMatch); // This will show if the passwords match
 
         if (!isPasswordMatch) {
-            console.log('Stored hashed password:', user.password); // Log the stored hashed password
-            console.log('Input password:', password); // Log the input password
-            console.log('Hashed input password for comparison:', await bcrypt.hash(password, 8)); // Log the re-hashed input password for comparison
-            return res.status(401).json({ message: 'Invalid email or password' });
+            // console.log('Stored hashed password:', user.password); // Log the stored hashed password
+            // console.log('Input password:', password); // Log the input password
+            // console.log('Hashed input password for comparison:', await bcrypt.hash(password, 12)); // Log the re-hashed input password for comparison
+            return res.status(401).json({ message: 'Invalid email or password2' });
         }
         
         const token = jwt.sign({ _id: user._id, email: user.email }, 'secret key', { expiresIn: '1h' });

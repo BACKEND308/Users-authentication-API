@@ -54,6 +54,9 @@ def populate_users_collection(db):
 def main():
     db = connectDB()
     #populate_users_collection(db)
+    print(
+        check_password(get_pss(), fetch_data_from_mongodb(db))
+    )
     
     
 if __name__ == "__main__":
