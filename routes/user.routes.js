@@ -173,94 +173,97 @@ const authenticateToken = (req, res, next) => {
     next();
   };
 
-// Update user type to admin
-router.patch('/users/:id/admin', authenticateToken, authorizeAdmin, async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const user = await User.findByIdAndUpdate(id, { type: 'admin' }, { new: true });
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.json({ message: 'User type updated to admin', user });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-});
+// // Update user type to admin
+// router.patch('/users/:id/:admin', authenticateToken, authorizeAdmin, async (req, res) => {
+//     const { id, privilege } = req.params;
+//     const updatedType='';
+//     if (privilege === 'admin') updatedType = 'admin';
+//     else if (privilege === 'passenger') updatedType = 'passenger';
+//     else return res.status(400).json({ message: 'Invalid privilege' });
+//     try {
+//       const user = await User.findByIdAndUpdate(id, { type: updatedType }, { new: true });
+//       if (!user) {
+//         return res.status(404).json({ message: 'User not found' });
+//       }
+//       res.json({ message: 'User type updated to admin', user });
+//     } catch (err) {
+//       res.status(500).json({ message: err.message });
+//     }
+// });
 
-//Forgot password endpoint
-router.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
-    if (!email) {
-        return res.status(400).json({ message: 'Please provide an email' });
-    }
-    try {
-        const user = await User.findOne({email});
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+// //Forgot password endpoint
+// router.post('/forgot-password', async (req, res) => {
+//     const { email } = req.body;
+//     if (!email) {
+//         return res.status(400).json({ message: 'Please provide an email' });
+//     }
+//     try {
+//         const user = await User.findOne({email});
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex');
-        user.resetPasswordToken = resetToken;
-        user.resetPasswordExpires = Date.now() + 3600000; //expires in an hour
+//         const resetToken = crypto.randomBytes(20).toString('hex');
+//         user.resetPasswordToken = resetToken;
+//         user.resetPasswordExpires = Date.now() + 3600000; //expires in an hour
 
-        await user.save();
+//         await user.save();
 
-        //Send email with reset link
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL,
-                pass: process.env.PASSWORD
-            }
-        });
-        const mailOptions = {
-            from: process.env.EMAIL,
-            to: email,
-            subject: 'Password Reset',
-            text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
-            Please click on the following link, or paste this into your browser to complete the process:\n\n
-            http://${req.headers.host}/reset/${resetToken}\n\n
-            If you did not request this, please ignore this email and your password will remain unchanged.\n`
-        };
+//         //Send email with reset link
+//         const transporter = nodemailer.createTransport({
+//             service: 'Gmail',
+//             auth: {
+//                 user: process.env.EMAIL,
+//                 pass: process.env.PASSWORD
+//             }
+//         });
+//         const mailOptions = {
+//             from: process.env.EMAIL,
+//             to: email,
+//             subject: 'Password Reset',
+//             text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
+//             Please click on the following link, or paste this into your browser to complete the process:\n\n
+//             http://${req.headers.host}/reset/${resetToken}\n\n
+//             If you did not request this, please ignore this email and your password will remain unchanged.\n`
+//         };
         
-        transporter.sendMail(mailOptions, (err) => {
-            if (err) {
-                return res.status(500).json({ message: err.message });
-            }
-            res.status(200).json({ message: 'An email has been sent to ' + email + ' with further instructions.' });
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: 'Server error: ', error});
-    }
-});
+//         transporter.sendMail(mailOptions, (err) => {
+//             if (err) {
+//                 return res.status(500).json({ message: err.message });
+//             }
+//             res.status(200).json({ message: 'An email has been sent to ' + email + ' with further instructions.' });
+//         });
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({ message: 'Server error: ', error});
+//     }
+// });
 
-// Password reset endpoint
-router.post('/reset-password', async (req, res) => {
-    const { resetToken, password } = req.body;
-    if (!resetToken || !password) {
-        return res.status(400).json({ message: 'Please provide a reset token and password' });
-    }
-    try {
-        const user = await User.findOne({ 
-            resetPasswordToken: resetToken, 
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired reset token' });
-        }
-        user.password = await bcrypt.hash(password, 8);
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        await user.save();
+// // Password reset endpoint
+// router.post('/reset-password', async (req, res) => {
+//     const { resetToken, password } = req.body;
+//     if (!resetToken || !password) {
+//         return res.status(400).json({ message: 'Please provide a reset token and password' });
+//     }
+//     try {
+//         const user = await User.findOne({ 
+//             resetPasswordToken: resetToken, 
+//             resetPasswordExpires: { $gt: Date.now() }
+//         });
+//         if (!user) {
+//             return res.status(400).json({ message: 'Invalid or expired reset token' });
+//         }
+//         user.password = await bcrypt.hash(password, 8);
+//         user.resetPasswordToken = undefined;
+//         user.resetPasswordExpires = undefined;
+//         await user.save();
         
-        res.status(200).json({ message: 'Password reset successful' });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: 'Server error: ', error});
-    }
-});
+//         res.status(200).json({ message: 'Password reset successful' });
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({ message: 'Server error: ', error});
+//     }
+// });
 
 //DELETE request to delete a user
 router.delete('/delete/:email', async (req, res) => {
