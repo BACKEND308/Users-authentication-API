@@ -53,7 +53,7 @@ def populate_users_collection(db):
     
 def main():
     db = connectDB()
-    populate_users_collection(db)
+    #populate_users_collection(db)
     
     
 if __name__ == "__main__":
