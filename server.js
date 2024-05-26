@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const connectMongo = require('./db/connectMongo'); // Ensure this properly sets up and exports the MongoDB connection.
 
-const rosterRoutes = require('./routes/user.routes');
+const userRoutes = require('./routes/user.routes');
 
 const app = express();
 
@@ -15,7 +15,7 @@ app.use(express.json()); //for parsing application/json
 connectMongo();
 
 //connect to routes
-app.use('/user', rosterRoutes);
+app.use('/api/user', userRoutes);
 
 //Define a simple route for testing, ping with 1
 app.get('/', (req, res) => {
